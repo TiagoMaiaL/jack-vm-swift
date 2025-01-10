@@ -16,6 +16,7 @@ struct JackVM: ParsableCommand {
     func run() throws {
         let fileReader = VMFileReader()
         let content = try fileReader.contents(fromFolderAt: vmFilePath)
-        debugPrint(content)
+        let commands = try Parser().parse(content: content)
+        debugPrint(commands)
     }
 }
