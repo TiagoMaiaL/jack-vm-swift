@@ -9,9 +9,15 @@ import ArgumentParser
 
 @main
 struct JackVM: ParsableCommand {
-    // TODO: Add description to each argument.
-    @Argument var vmFilePath: String
-    @Argument var asmOutputPath: String
+    @Argument(
+        help: "The path to a .vm file or directory contaninig multiple ones."
+    )
+    var vmFilePath: String
+    
+    @Argument(
+        help: "The path to .hack file being generated."
+    )
+    var asmOutputPath: String
 
     func run() throws {
         let fileReader = VMFileReader()
