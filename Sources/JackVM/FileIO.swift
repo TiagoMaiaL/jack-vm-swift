@@ -1,5 +1,5 @@
 //
-//  VMFileReader.swift
+//  FileIO.swift
 //  jackvm
 //
 //  Created by Tiago Lopes on 09/01/25.
@@ -8,10 +8,10 @@
 import Foundation
 import RegexBuilder
 
-struct VMFileReader {
-    typealias Content = Array<String>
+struct FileIO {
+    typealias VMContent = Array<String>
     
-    func contents(fromFolderAt path: String) throws(FileError) -> Content {
+    func contents(fromFolderAt path: String) throws(FileError) -> VMContent {
         guard let data = FileManager().contents(atPath: path) else {
             throw .fileNotFound
         }
@@ -50,7 +50,7 @@ struct VMFileReader {
     }
 }
 
-extension VMFileReader {
+extension FileIO {
     enum FileError: Error {
         case fileNotFound
         case invalidContent

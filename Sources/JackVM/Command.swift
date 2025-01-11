@@ -1,5 +1,5 @@
 //
-//  Commands.swift
+//  Command.swift
 //  jackvm
 //
 //  Created by Tiago Lopes on 10/01/25.

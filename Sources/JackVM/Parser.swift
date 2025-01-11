@@ -6,7 +6,7 @@
 //
 
 struct Parser {
-    func parse(content: VMFileReader.Content) throws -> [Command] {
+    func parse(content: FileIO.VMContent) throws -> [Command] {
         try content.map(makeCommand)
     }
     
