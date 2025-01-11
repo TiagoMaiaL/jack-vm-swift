@@ -8,7 +8,9 @@
 struct Translator {
     typealias ASM = String
     
-    func translate(commands: [Command]) -> ASM {
+    private var stack = Stack()
+    
+    mutating func translate(commands: [Command]) -> ASM {
         // For each command
         commands
             .map { command in
@@ -26,7 +28,7 @@ struct Translator {
             .reduce("") { "\($0)\n\($1)" }
     }
     
-    private func translateMemoryAccess(
+    mutating private func translateMemoryAccess(
         command: Command,
         operation: MemoryOperation
     ) -> ASM {
@@ -38,10 +40,13 @@ struct Translator {
         var asm = ""
         
         switch fOperand {
-        case "constant":
-            asm += "@\(sOperand)\n"
-            asm += "D=A"
-            // TODO: Determine how not to override registers
+        case "constant": // TODO: Use reusable constants
+            let usesDRegister = stack.count == 0
+            
+            asm += "@\(sOperand)"
+            if usesDRegister { asm += "\nD=A" }
+            
+            stack.increment()
             
         default:
             preconditionFailure("Unexpected memory segment: \(fOperand)")
@@ -50,7 +55,7 @@ struct Translator {
         return asm
     }
     
-    private func translateArithmetic(operation: ArithmeticOperation) -> ASM {
+    mutating private func translateArithmetic(operation: ArithmeticOperation) -> ASM {
         let asm: ASM
         
         switch operation {
@@ -86,6 +91,20 @@ struct Translator {
             asm = "D=!D"
         }
 
+        stack.reset()
+        
         return asm
+    }
+    
+    struct Stack {
+        private(set) var count = 0
+        
+        mutating func increment() {
+            count += 1
+        }
+        
+        mutating func reset() {
+            count = 0
+        }
     }
 }
