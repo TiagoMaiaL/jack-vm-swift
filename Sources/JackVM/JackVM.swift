@@ -23,7 +23,7 @@ struct JackVM: ParsableCommand {
         let fileReader = FileIO()
         let content = try fileReader.contents(fromFolderAt: vmFilePath)
         let commands = try Parser().parse(content: content)
-        
-        debugPrint(commands)
+        let asm = Translator().translate(commands: commands)
+        debugPrint(asm)
     }
 }
