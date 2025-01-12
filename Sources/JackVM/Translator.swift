@@ -8,10 +8,7 @@
 struct Translator {
     typealias ASM = String
     
-    private var stack = Stack()
-    
-    mutating func translate(commands: [Command]) -> ASM {
-        // For each command
+    func translate(commands: [Command]) -> ASM {
         commands
             .map { command in
                 switch command.type {
@@ -28,7 +25,7 @@ struct Translator {
             .reduce("") { "\($0)\n\($1)" }
     }
     
-    mutating private func translateMemoryAccess(
+    private func translateMemoryAccess(
         command: Command,
         operation: MemoryOperation
     ) -> ASM {
@@ -39,28 +36,43 @@ struct Translator {
         
         var asm = ""
         
-        switch fOperand {
-        case "constant": // TODO: Use reusable constants
-            let usesDRegister = stack.count == 0
+        switch operation {
+        case .push:
+            switch fOperand {
+            case "constant":
+                asm += "@\(sOperand)\n"
+                asm += "D=A\n" // D = CONST
+                asm += "@SP\n"
+                asm += "A=M\n"
+                asm += "M=D\n" // RAM[RAM[SP]] = CONST
+                asm += "@SP\n"
+                asm += "M=M+1" // SP++
+                
+            default:
+                preconditionFailure()
+            }
             
-            asm += "@\(sOperand)"
-            if usesDRegister { asm += "\nD=A" }
-            
-            stack.increment()
-            
-        default:
-            preconditionFailure("Unexpected memory segment: \(fOperand)")
+        case .pop:
+            preconditionFailure()
+            break
         }
         
         return asm
     }
     
-    mutating private func translateArithmetic(operation: ArithmeticOperation) -> ASM {
-        let asm: ASM
+    private func translateArithmetic(operation: ArithmeticOperation) -> ASM {
+        var asm: ASM = ""
         
         switch operation {
         case .add:
-            asm = "D=D+A"
+            asm += "@SP\n"
+            asm += "A=M\n"
+            asm += "D=M\n"   // D = Stack[sp]
+            asm += "@SP\n"
+            asm += "M=M-1\n" // SP--
+            asm += "A=M\n"
+            asm += "D=D+M\n" // a + b
+            asm += "M=D\n"   // Stack[sp] = a + b
             
         case .sub:
             asm = "D=D-A"
@@ -90,21 +102,7 @@ struct Translator {
         case .not:
             asm = "D=!D"
         }
-
-        stack.reset()
         
         return asm
-    }
-    
-    struct Stack {
-        private(set) var count = 0
-        
-        mutating func increment() {
-            count += 1
-        }
-        
-        mutating func reset() {
-            count = 0
-        }
     }
 }
