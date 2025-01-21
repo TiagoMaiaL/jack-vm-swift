@@ -8,6 +8,8 @@
 struct Translator {
     typealias ASM = String
     
+    // TODO: Add initial code to bootstrap memory segments and sp
+    
     func translate(commands: [Command]) -> ASM {
         commands
             .map { command in
@@ -40,13 +42,18 @@ struct Translator {
         case .push:
             switch fOperand {
             case "constant":
-                asm += "@\(sOperand)\n"
-                asm += "D=A\n" // D = CONST
-                asm += "@SP\n"
-                asm += "A=M\n"
-                asm += "M=D\n" // RAM[RAM[SP]] = CONST
-                asm += "@SP\n"
-                asm += "M=M+1" // SP++
+                // let c
+                // RAM[SP] = c
+                // SP++
+                asm += """
+                @\(sOperand)
+                D=A
+                @SP
+                A=M
+                M=D
+                @SP
+                M=M+1
+                """
                 
             default:
                 preconditionFailure()
@@ -65,14 +72,20 @@ struct Translator {
         
         switch operation {
         case .add:
-            asm += "@SP\n"
-            asm += "A=M\n"
-            asm += "D=M\n"   // D = Stack[sp]
-            asm += "@SP\n"
-            asm += "M=M-1\n" // SP--
-            asm += "A=M\n"
-            asm += "D=D+M\n" // a + b
-            asm += "M=D\n"   // Stack[sp] = a + b
+            // let d = RAM[SP]
+            // SP--
+            // d += RAM[SP]
+            // RAM[SP] = d
+            asm += """
+            @SP
+            A=M
+            D=M
+            @SP
+            M=M-1
+            A=M
+            D=D+M
+            M=D
+            """
             
         case .sub:
             asm = "D=D-A"

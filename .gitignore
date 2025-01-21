@@ -61,5 +61,6 @@ fastlane/screenshots/**/*.png
 fastlane/test_output
 
 # Project specific
-
 *.vm
+*.zip
+lang.txt
