@@ -11,6 +11,7 @@ Implementation of the Jack virtual machine described in Nand2Tetris
 - [x] Add component to parse the contents of a .vm file
 - [ ] Translate arithmetic commands into hack asm
 - [ ] Translate memory commands into hack asm
+- [x] Add component to write asm output file
 - [ ] Test with basic vm files
 - [ ] Read all .vm files in a directory and translate them into a single hack asm
 

@@ -20,11 +20,14 @@ struct JackVM: ParsableCommand {
     var asmOutputPath: String
 
     func run() throws {
-        let fileReader = FileIO()
-        let content = try fileReader.contents(fromFolderAt: vmFilePath)
-        let commands = try Parser().parse(content: content)
+        let io = FileIO()
+        let parser = Parser()
         let translator = Translator()
+
+        let content = try io.contents(fromFolderAt: vmFilePath)
+        let commands = try parser.parse(content: content)
         let asm = translator.translate(commands: commands)
-        debugPrint(asm)
+        
+        io.write(asm, to: asmOutputPath)
     }
 }

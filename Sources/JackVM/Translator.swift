@@ -5,9 +5,9 @@
 //  Created by Tiago Lopes on 11/01/25.
 //
 
+typealias ASM = String
+
 struct Translator {
-    typealias ASM = String
-    
     private let stackBase = 256
     
     var bootstrapCode: ASM {

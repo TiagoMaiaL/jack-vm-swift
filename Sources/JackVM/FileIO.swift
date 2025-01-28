@@ -8,9 +8,13 @@
 import Foundation
 import RegexBuilder
 
+// MARK: - VM input
+
 struct FileIO {
     typealias VMContent = Array<String>
+}
     
+extension FileIO {
     func contents(fromFolderAt path: String) throws(FileError) -> VMContent {
         guard let data = FileManager().contents(atPath: path) else {
             throw .fileNotFound
@@ -49,6 +53,16 @@ struct FileIO {
         return line
     }
 }
+
+// MARK: - ASM output
+
+extension FileIO {
+    func write(_ asm: ASM, to path: String) {
+        FileManager().createFile(atPath: path, contents: asm.data(using: .ascii))
+    }
+}
+
+// MARK: - Errors
 
 extension FileIO {
     enum FileError: Error {
