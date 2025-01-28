@@ -8,10 +8,20 @@
 struct Translator {
     typealias ASM = String
     
-    // TODO: Add initial code to bootstrap memory segments and sp
+    private let stackBase = 256
+    
+    var bootstrapCode: ASM {
+        """
+        @\(stackBase)
+        D=A
+        @SP
+        M=D
+        """
+        // TODO: initialize local and arg memory segments.
+    }
     
     func translate(commands: [Command]) -> ASM {
-        commands
+        bootstrapCode + commands
             .map { command in
                 switch command.type {
                 case .memoryAccess(let operation):
