@@ -10,12 +10,12 @@ import ArgumentParser
 @main
 struct JackVM: ParsableCommand {
     @Argument(
-        help: "The path to a .vm file or directory contaninig multiple ones."
+        help: "Path to a .vm file or directory contaninig multiple ones."
     )
     var vmFilePath: String
     
     @Argument(
-        help: "The path to .hack file being generated."
+        help: "Path to the .asm file being generated."
     )
     var asmOutputPath: String
 

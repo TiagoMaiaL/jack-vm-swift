@@ -82,17 +82,17 @@ struct Translator {
         
         switch operation {
         case .add:
-            // let d = RAM[SP]
+            // let d = RAM[SP-1]
             // SP--
-            // d += RAM[SP]
+            // d += RAM[SP-1]
             // RAM[SP] = d
             asm += """
             @SP
-            A=M
+            A=M-1
             D=M
             @SP
             M=M-1
-            A=M
+            A=M-1
             D=D+M
             M=D
             """

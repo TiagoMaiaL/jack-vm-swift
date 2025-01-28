@@ -64,4 +64,5 @@ fastlane/test_output
 *.vm
 *.zip
 lang.txt
+*.asm
 *.hack
