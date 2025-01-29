@@ -20,10 +20,16 @@ struct Translator {
         // TODO: initialize local and arg memory segments.
     }
     
-    // TODO: add termination code
+    var terminationCode: ASM {
+        """
+        (END)
+        @END
+        0;JMP
+        """
+    }
     
     func translate(commands: [Command]) -> ASM {
-        bootstrapCode + commands
+        let commandsCode = commands
             .map { command in
                 switch command.type {
                 case .memoryAccess(let operation):
@@ -37,6 +43,8 @@ struct Translator {
                 }
             }
             .reduce("") { "\($0)\n\($1)" }
+        
+        return bootstrapCode + commandsCode + terminationCode
     }
     
     private func translateMemoryAccess(
