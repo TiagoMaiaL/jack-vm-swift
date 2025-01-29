@@ -20,6 +20,8 @@ struct Translator {
         // TODO: initialize local and arg memory segments.
     }
     
+    // TODO: add termination code
+    
     func translate(commands: [Command]) -> ASM {
         bootstrapCode + commands
             .map { command in
@@ -98,32 +100,80 @@ struct Translator {
             """
             
         case .sub:
-            asm = "D=D-A"
+            // let d = RAM[SP-1]
+            // SP--
+            // d -= RAM[SP-1]
+            // RAM[SP] = d
+            asm += """
+            @SP
+            A=M-1
+            D=M
+            @SP
+            M=M-1
+            A=M-1
+            D=M-D
+            M=D
+            """
             
         case .neg:
-            asm = "D=-D"
+            // RAM[SP-1] = -RAM[SP-1]
+            asm += """
+            @SP
+            A=M-1
+            M=-M
+            """
             
         case .eq:
-            // subtract a - b, if result is 0, they are eq
-            // if result is != 0, they are not eq
-            // How to compare numbers in this case?
-            // Consider JMP
+            // TODO:
             asm = ""
             
         case .gt:
+            // TODO:
             asm = ""
             
         case .lt:
+            // TODO:
             asm = ""
             
         case .and:
-            asm = "D=D&A"
+            // let d = RAM[SP-1]
+            // SP--
+            // d = RAM[SP-1] & d
+            // RAM[SP-1] = d
+            asm += """
+            @SP
+            A=M-1
+            D=M
+            @SP
+            M=M-1
+            A=M-1
+            D=D&M
+            M=D
+            """
             
         case .or:
-            asm = "D=D|A"
+            // let d = RAM[SP-1]
+            // SP--
+            // d = RAM[SP-1] | d
+            // RAM[SP-1] = d
+            asm += """
+            @SP
+            A=M-1
+            D=M
+            @SP
+            M=M-1
+            A=M-1
+            D=D|M
+            M=D
+            """
             
         case .not:
-            asm = "D=!D"
+            // RAM[SP-1] = !RAM[SP-1]
+            asm += """
+            @SP
+            A=M-1
+            M=!M
+            """
         }
         
         return asm
