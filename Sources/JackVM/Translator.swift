@@ -17,11 +17,11 @@ struct Translator {
         @SP
         M=D
         """
-        // TODO: initialize local and arg memory segments.
     }
     
     var terminationCode: ASM {
         """
+        
         (END)
         @END
         0;JMP
@@ -132,9 +132,22 @@ struct Translator {
             """
             
         case .eq:
-            // TODO:
-            asm = ""
-            
+            // let d = RAM[SP-1]
+            // SP--
+            // d = RAM[SP-1] == d
+            // RAM[SP] = d
+            asm += """
+            @SP
+            A=M-1
+            D=M
+            @SP
+            M=M-1
+            A=M-1
+            D=M-D
+            D=!D
+            M=D
+            """
+
         case .gt:
             // TODO:
             asm = ""
