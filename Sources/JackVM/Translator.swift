@@ -149,12 +149,64 @@ struct Translator {
             """
 
         case .gt:
-            // TODO:
-            asm = ""
+            // let b = RAM[SP-1]
+            // SP--
+            // let a = RAM[SP-1]
+            // let res = a - b
+            // if res > 0
+            //     RAM[SP] = 1
+            // else
+            //     RAM[SP] = 0
+            asm += """
+            @SP
+            A=M-1
+            D=M
+            @SP
+            M=M-1
+            A=M-1
+            D=M-D
+            @TEST_GT
+            D;JGT
+            D=0
+            @TEST_GT_END
+            0;JMP
+            (TEST_GT)
+            D=-1
+            (TEST_GT_END)
+            @SP
+            A=M-1
+            M=D
+            """
             
         case .lt:
-            // TODO:
-            asm = ""
+            // let b = RAM[SP-1]
+            // SP--
+            // let a = RAM[SP-1]
+            // let res = a - b
+            // if res < 0
+            //     RAM[SP] = 1
+            // else
+            //     RAM[SP] = 0
+            asm += """
+            @SP
+            A=M-1
+            D=M
+            @SP
+            M=M-1
+            A=M-1
+            D=M-D
+            @TEST_LT
+            D;JLT
+            D=0
+            @TEST_LT_END
+            0;JMP
+            (TEST_LT)
+            D=-1
+            (TEST_LT_END)
+            @SP
+            A=M-1
+            M=D
+            """
             
         case .and:
             // let d = RAM[SP-1]
