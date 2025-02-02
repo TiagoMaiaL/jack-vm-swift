@@ -139,8 +139,10 @@ struct Translator {
             // SP--
             // let a = RAM[SP-1]
             // d = a - b
-            // d = !d
-            // RAM[SP-1] = d
+            // if d == 0
+            //     RAM[SP-1] = -1
+            // else
+            //     RAM[SP-1] = 0
             asm += """
             @SP
             A=M-1
@@ -149,9 +151,19 @@ struct Translator {
             M=M-1
             A=M-1
             D=M-D
-            D=!D
+            @TEST_EQ_\(Self.labelId)
+            D;JEQ
+            D=0
+            @TEST_EQ_END_\(Self.labelId)
+            0;JMP
+            (TEST_EQ_\(Self.labelId))
+            D=-1
+            (TEST_EQ_END_\(Self.labelId))
+            @SP
+            A=M-1
             M=D
             """
+            Self.labelId += 1
 
         case .gt:
             // let b = RAM[SP-1]
