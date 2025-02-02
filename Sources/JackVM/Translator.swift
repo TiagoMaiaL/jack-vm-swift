@@ -92,10 +92,11 @@ struct Translator {
         
         switch operation {
         case .add:
-            // let d = RAM[SP-1]
+            // let b = RAM[SP-1]
             // SP--
-            // d += RAM[SP-1]
-            // RAM[SP] = d
+            // let a = RAM[SP-1]
+            // d = a + b
+            // RAM[SP-1] = d
             asm += """
             @SP
             A=M-1
@@ -108,10 +109,11 @@ struct Translator {
             """
             
         case .sub:
-            // let d = RAM[SP-1]
+            // let b = RAM[SP-1]
             // SP--
-            // d -= RAM[SP-1]
-            // RAM[SP] = d
+            // let a = RAM[SP-1]
+            // d = a - b
+            // RAM[SP - 1] = d
             asm += """
             @SP
             A=M-1
@@ -132,10 +134,12 @@ struct Translator {
             """
             
         case .eq:
-            // let d = RAM[SP-1]
+            // let b = RAM[SP-1]
             // SP--
-            // d = RAM[SP-1] == d
-            // RAM[SP] = d
+            // let a = RAM[SP-1]
+            // d = a - b
+            // d = !d
+            // RAM[SP-1] = d
             asm += """
             @SP
             A=M-1
@@ -209,9 +213,10 @@ struct Translator {
             """
             
         case .and:
-            // let d = RAM[SP-1]
+            // let b = RAM[SP-1]
             // SP--
-            // d = RAM[SP-1] & d
+            // let a = RAM[SP-1]
+            // d = a & d
             // RAM[SP-1] = d
             asm += """
             @SP
@@ -225,9 +230,10 @@ struct Translator {
             """
             
         case .or:
-            // let d = RAM[SP-1]
+            // let b = RAM[SP-1]
             // SP--
-            // d = RAM[SP-1] | d
+            // let a = RAM[SP-1]
+            // d = a | d
             // RAM[SP-1] = d
             asm += """
             @SP
