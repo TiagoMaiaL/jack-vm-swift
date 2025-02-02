@@ -8,6 +8,7 @@
 typealias ASM = String
 
 struct Translator {
+    nonisolated(unsafe) private static var labelId = 0
     private let stackBase = 256
     
     var bootstrapCode: ASM {
@@ -169,18 +170,19 @@ struct Translator {
             M=M-1
             A=M-1
             D=M-D
-            @TEST_GT
+            @TEST_GT_\(Self.labelId)
             D;JGT
             D=0
-            @TEST_GT_END
+            @TEST_GT_END_\(Self.labelId)
             0;JMP
-            (TEST_GT)
+            (TEST_GT_\(Self.labelId))
             D=-1
-            (TEST_GT_END)
+            (TEST_GT_END_\(Self.labelId))
             @SP
             A=M-1
             M=D
             """
+            Self.labelId += 1
             
         case .lt:
             // let b = RAM[SP-1]
@@ -199,18 +201,19 @@ struct Translator {
             M=M-1
             A=M-1
             D=M-D
-            @TEST_LT
+            @TEST_LT_\(Self.labelId)
             D;JLT
             D=0
-            @TEST_LT_END
+            @TEST_LT_END_\(Self.labelId)
             0;JMP
-            (TEST_LT)
+            (TEST_LT_\(Self.labelId))
             D=-1
-            (TEST_LT_END)
+            (TEST_LT_END_\(Self.labelId))
             @SP
             A=M-1
             M=D
             """
+            Self.labelId += 1
             
         case .and:
             // let b = RAM[SP-1]
