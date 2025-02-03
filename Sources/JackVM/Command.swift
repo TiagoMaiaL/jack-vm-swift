@@ -5,38 +5,16 @@
 //  Created by Tiago Lopes on 10/01/25.
 //
 
-struct Command {
-    enum `Type` {
-        case arithmetic(operation: ArithmeticOperation)
-        case memoryAccess(operation: MemoryOperation)
-    }
-    
-    let type: Type
-    let firstOperand: String?
-    let secondOperand: String?
+protocol Command: CustomStringConvertible {}
+
+protocol ArithmeticCommand: Command {
+    var operation: ArithmeticOperation { get }
 }
 
-extension Command.`Type`: CustomDebugStringConvertible {
-    var debugDescription: String {
-        switch self {
-        case .arithmetic(let operation):
-            return operation.rawValue
-        
-        case .memoryAccess(let operation):
-            return operation.rawValue
-        }
-    }
-}
-
-extension Command: CustomDebugStringConvertible {
-    var debugDescription: String {
-        var description = "\(type.debugDescription)"
-        
-        if let firstOperand { description += " \(firstOperand)"}
-        if let secondOperand { description += " \(secondOperand)"}
-
-        return description
-    }
+protocol MemoryCommand: Command {
+    var operation: MemoryOperation { get }
+    var segment: MemorySegment { get }
+    var index: Int { get }
 }
 
 enum ArithmeticOperation: String {
@@ -54,4 +32,27 @@ enum ArithmeticOperation: String {
 enum MemoryOperation: String {
     case push
     case pop
+}
+
+enum MemorySegment: String {
+    case argument
+    case local
+    case `static`
+    case constant
+    case this
+    case that
+    case pointer
+    case temp
+}
+
+struct Arithmetic: ArithmeticCommand {
+    var description: String { operation.rawValue }
+    let operation: ArithmeticOperation
+}
+
+struct MemoryAccess: MemoryCommand {
+    var description: String { "\(operation.rawValue) \(segment.rawValue) \(index)" }
+    let operation: MemoryOperation
+    let segment: MemorySegment
+    let index: Int
 }

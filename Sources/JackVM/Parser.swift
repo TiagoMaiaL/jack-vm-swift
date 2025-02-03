@@ -11,11 +11,6 @@ struct Parser {
     }
     
     private func makeCommand(from line: String) throws(Error) -> Command {
-        let command: Command
-        let type: Command.`Type`
-        var firstOperand: String?
-        var secondOperand: String?
-        
         let components = line.components(separatedBy: .whitespaces)
         
         guard !components.isEmpty else { throw .emptyLine }
@@ -23,6 +18,8 @@ struct Parser {
         guard let keyword = Keyword(rawValue: components[0]) else {
             throw .unexpectedKeyword(text: components[0])
         }
+        
+        let command: Command
         
         switch keyword {
         case .push, .pop:
@@ -34,37 +31,32 @@ struct Parser {
                 preconditionFailure("Couldn't represent memory operation.")
             }
             
-            type = .memoryAccess(operation: operation)
-
-            guard let segment = Keyword(rawValue: components[1]),
-                  Keyword.memorySegments.contains(segment) else {
+            guard let segmentKeyword = Keyword(rawValue: components[1]),
+                  Keyword.memorySegments.contains(segmentKeyword),
+                  let segment = MemorySegment(rawValue: segmentKeyword.rawValue) else {
                 throw .unexpectedMemorySegment(text: components[1])
             }
-            
-            firstOperand = segment.rawValue
             
             guard let memoryIndex = Int(components[2]) else {
                 throw .unexpectedMemoryIndex(text: components[2])
             }
             
-            secondOperand = memoryIndex.description
+            command = MemoryAccess(
+                operation: operation,
+                segment: segment,
+                index: memoryIndex
+            )
             
         case .add, .sub, .neg, .eq, .gt, .lt, .and, .or, .not:
             guard let operation = ArithmeticOperation(rawValue: keyword.rawValue) else {
                 preconditionFailure("Couldn't represent arithmetic operation.")
             }
             
-            type = .arithmetic(operation: operation)
-
+            command = Arithmetic(operation: operation)
+            
         default:
             throw .unexpectedCommand(text: keyword.rawValue)
         }
-        
-        command = .init(
-            type: type,
-            firstOperand: firstOperand,
-            secondOperand: secondOperand
-        )
         
         return command
     }

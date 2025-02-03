@@ -32,42 +32,38 @@ struct Translator {
     func translate(commands: [Command]) -> ASM {
         let commandsCode = commands
             .map { command in
-                switch command.type {
-                case .memoryAccess(let operation):
-                    return translateMemoryAccess(
-                        command: command,
-                        operation: operation
-                    )
+                let asmEquivalent: ASM
+                
+                switch command {
+                case let memoryAccess as MemoryAccess:
+                    asmEquivalent = translate(memoryAccess)
                     
-                case .arithmetic(let operation):
-                    return translateArithmetic(operation: operation)
+                case let arithmetic as Arithmetic:
+                    asmEquivalent = translate(arithmetic)
+                    
+                default:
+                    preconditionFailure()
                 }
+                
+                return asmEquivalent
             }
             .reduce("") { "\($0)\n\($1)" }
         
         return bootstrapCode + commandsCode + terminationCode
     }
     
-    private func translateMemoryAccess(
-        command: Command,
-        operation: MemoryOperation
-    ) -> ASM {
-        guard let fOperand = command.firstOperand,
-              let sOperand = command.secondOperand else {
-            preconditionFailure("Operands must be set when translating memory access.")
-        }
-        
+    private func translate(_ memoryAccess: MemoryAccess) -> ASM {
         var asm = ""
         
-        switch operation {
+        switch memoryAccess.operation {
         case .push:
-            switch fOperand {
-            case "constant":
+            switch memoryAccess.segment {
+            case .constant:
                 // let c
                 // RAM[SP] = c
                 // SP++
                 asm += """
-                @\(sOperand)
+                @\(memoryAccess.index)
                 D=A
                 @SP
                 A=M
@@ -88,10 +84,10 @@ struct Translator {
         return asm
     }
     
-    private func translateArithmetic(operation: ArithmeticOperation) -> ASM {
+    private func translate(_ arithmetic: Arithmetic) -> ASM {
         var asm: ASM = ""
         
-        switch operation {
+        switch arithmetic.operation {
         case .add:
             // let b = RAM[SP-1]
             // SP--
