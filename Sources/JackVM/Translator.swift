@@ -35,10 +35,10 @@ struct Translator {
                 let asmEquivalent: ASM
                 
                 switch command {
-                case let memoryAccess as MemoryAccess:
+                case let memoryAccess as MemoryCommand:
                     asmEquivalent = translate(memoryAccess)
                     
-                case let arithmetic as Arithmetic:
+                case let arithmetic as ArithmeticCommand:
                     asmEquivalent = translate(arithmetic)
                     
                 default:
@@ -52,7 +52,7 @@ struct Translator {
         return bootstrapCode + commandsCode + terminationCode
     }
     
-    private func translate(_ memoryAccess: MemoryAccess) -> ASM {
+    private func translate(_ memoryAccess: MemoryCommand) -> ASM {
         var asm = ""
         
         switch memoryAccess.operation {
@@ -84,7 +84,7 @@ struct Translator {
         return asm
     }
     
-    private func translate(_ arithmetic: Arithmetic) -> ASM {
+    private func translate(_ arithmetic: ArithmeticCommand) -> ASM {
         var asm: ASM = ""
         
         switch arithmetic.operation {
