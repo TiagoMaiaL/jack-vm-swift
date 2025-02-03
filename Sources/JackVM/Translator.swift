@@ -10,7 +10,10 @@ typealias ASM = String
 struct Translator {
     nonisolated(unsafe) private static var labelId = 0
     private let stackBase = 256 // To 2047
-    private let localSegmentBase = 768 // FIXME: Arbitrary value used to complete 1st part.
+    // FIXME: Arbitrary value used to complete 1st part.
+    private let localSegmentBase = 768
+    private let argumentSegmentBase = 1280
+    
     
     var bootstrapCode: ASM {
         """
@@ -59,13 +62,13 @@ struct Translator {
         switch memoryAccess.operation {
         case .push:
             switch memoryAccess.segment {
-            case .constant:
-                // let c
-                // RAM[SP] = c
+            case .argument:
+                // let a = ARGUMENT[index]
+                // RAM[SP] = a
                 // SP++
                 asm += """
-                @\(memoryAccess.constant)
-                D=A
+                @\(argumentSegmentBase + memoryAccess.index)
+                D=M
                 @SP
                 A=M
                 M=D
@@ -87,6 +90,20 @@ struct Translator {
                 M=M+1
                 """
                 
+            case .constant:
+                // let c
+                // RAM[SP] = c
+                // SP++
+                asm += """
+                @\(memoryAccess.constant)
+                D=A
+                @SP
+                A=M
+                M=D
+                @SP
+                M=M+1
+                """
+                
             default:
                 preconditionFailure()
             }
@@ -94,7 +111,18 @@ struct Translator {
         case .pop:
             switch memoryAccess.segment {
             case .argument:
-                break
+                // D = RAM[SP-1]
+                // ARGUMENT[index] = D
+                // SP--
+                asm += """
+                @SP
+                A=M-1
+                D=M
+                @\(argumentSegmentBase + memoryAccess.index)
+                M=D
+                @SP
+                M=M-1
+                """
                 
             case .local:
                 // D = RAM[SP-1]
