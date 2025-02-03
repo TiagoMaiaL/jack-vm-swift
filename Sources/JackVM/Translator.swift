@@ -9,7 +9,8 @@ typealias ASM = String
 
 struct Translator {
     nonisolated(unsafe) private static var labelId = 0
-    private let stackBase = 256
+    private let stackBase = 256 // To 2047
+    private let localSegmentBase = 768 // FIXME: Arbitrary value used to complete 1st part.
     
     var bootstrapCode: ASM {
         """
@@ -63,8 +64,22 @@ struct Translator {
                 // RAM[SP] = c
                 // SP++
                 asm += """
-                @\(memoryAccess.index)
+                @\(memoryAccess.constant)
                 D=A
+                @SP
+                A=M
+                M=D
+                @SP
+                M=M+1
+                """
+                
+            case .local:
+                // let a = LOCAL[index]
+                // RAM[SP] = a
+                // SP++
+                asm += """
+                @\(localSegmentBase + memoryAccess.index)
+                D=M
                 @SP
                 A=M
                 M=D
@@ -77,7 +92,43 @@ struct Translator {
             }
             
         case .pop:
-            preconditionFailure()
+            switch memoryAccess.segment {
+            case .argument:
+                break
+                
+            case .local:
+                // D = RAM[SP-1]
+                // LOCAL[index] = D
+                // SP--
+                asm += """
+                @SP
+                A=M-1
+                D=M
+                @\(localSegmentBase + memoryAccess.index)
+                M=D
+                @SP
+                M=M-1
+                """
+                
+            case .static:
+                break
+                
+            case .this:
+                break
+                
+            case .that:
+                break
+                
+            case .pointer:
+                break
+                
+            case .temp:
+                break
+                
+            case .constant:
+                preconditionFailure() // TODO: Throw an error
+            }
+            
             break
         }
         
@@ -268,4 +319,8 @@ struct Translator {
         
         return asm
     }
+}
+
+fileprivate extension MemoryCommand {
+    var constant: Int { index }
 }
