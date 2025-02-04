@@ -129,6 +129,17 @@ struct Translator {
                 M=M+1
                 """
                 
+            case .static:
+                asm += """
+                @static.\(memoryAccess.index)
+                D=M
+                @SP
+                A=M
+                M=D
+                @SP
+                M=M+1
+                """
+                
             case .constant:
                 // let c
                 // RAM[SP] = c
@@ -170,9 +181,6 @@ struct Translator {
                 @SP
                 M=M+1
                 """
-                
-            default:
-                preconditionFailure()
             }
             
         case .pop:
@@ -206,7 +214,18 @@ struct Translator {
                 """
                 
             case .static:
-                break
+                // D = RAM[SP-1]
+                // RAM[static_addr] = D
+                // SP--
+                // TODO: Use the file name and var as the label
+                asm += """
+                @SP
+                M=M-1
+                A=M
+                D=M
+                @static.\(memoryAccess.index)
+                M=D
+                """
                 
             case .this:
                 // let thisBase = RAM[THIS]
@@ -281,8 +300,6 @@ struct Translator {
             case .constant:
                 preconditionFailure() // TODO: Throw an error
             }
-            
-            break
         }
         
         return asm
