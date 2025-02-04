@@ -10,13 +10,12 @@ typealias ASM = String
 struct Translator {
     nonisolated(unsafe) private static var labelId = 0
     private let stackBase = 256 // To 2047
+    private let pointerSegmentBase = 3
     private let tempSegmentBase = 5
     // FIXME: Arbitrary value used to complete 1st part.
     private let localSegmentBase = 300
     private let argumentSegmentBase = 400
-    private let thisSegmentBase = 3000
-    private let thatSegmentBase = 3010
-    
+        
     var bootstrapCode: ASM {
         """
         @\(stackBase)
@@ -93,11 +92,16 @@ struct Translator {
                 """
                 
             case .this:
-                // let a = THIS[index]
-                // RAM[SP] = a
+                // let thisBase = RAM[THIS]
+                // let addr = thisBase + index
+                // let val = RAM[addr]
+                // RAM[SP] = val
                 // SP++
                 asm += """
-                @\(thisSegmentBase + memoryAccess.index)
+                @THIS
+                D=M
+                @\(memoryAccess.index)
+                A=D+A
                 D=M
                 @SP
                 A=M
@@ -107,11 +111,16 @@ struct Translator {
                 """
                 
             case .that:
-                // let a = THAT[index]
-                // RAM[SP] = a
+                // let thatBase = RAM[THAT]
+                // let addr = thatBase + index
+                // let val = RAM[addr]
+                // RAM[SP] = val
                 // SP++
                 asm += """
-                @\(thatSegmentBase + memoryAccess.index)
+                @THAT
+                D=M
+                @\(memoryAccess.index)
+                A=D+A
                 D=M
                 @SP
                 A=M
@@ -127,6 +136,20 @@ struct Translator {
                 asm += """
                 @\(memoryAccess.constant)
                 D=A
+                @SP
+                A=M
+                M=D
+                @SP
+                M=M+1
+                """
+            
+            case .pointer:
+                // let d = POINTER[index]
+                // RAM[SP] = d
+                // SP++
+                asm += """
+                @\(pointerSegmentBase + memoryAccess.index)
+                D=M
                 @SP
                 A=M
                 M=D
@@ -186,35 +209,60 @@ struct Translator {
                 break
                 
             case .this:
-                // let d = RAM[SP-1]
-                // THIS[index] = d
+                // let thisBase = RAM[THIS]
+                // let addr = thisBase + index
+                // RAM[13] = addr // R13 points to the address
                 // SP--
+                // let d = RAM[SP]
+                // RAM[RAM[13]] = d
                 asm += """
-                @SP
-                A=M-1
+                @THIS
                 D=M
-                @\(thisSegmentBase + memoryAccess.index)
+                @\(memoryAccess.index)
+                D=D+A
+                @R13
                 M=D
                 @SP
                 M=M-1
+                A=M
+                D=M
+                @R13
+                A=M
+                M=D
                 """
                 
             case .that:
-                // let d = RAM[SP-1]
-                // THAT[index] = d
+                // let thisBase = RAM[THIS]
+                // let addr = thisBase + index
+                // RAM[13] = addr // R13 points to the address
                 // SP--
+                // let d = RAM[SP]
+                // RAM[RAM[13]] = d
                 asm += """
-                @SP
-                A=M-1
+                @THAT
                 D=M
-                @\(thatSegmentBase + memoryAccess.index)
+                @\(memoryAccess.index)
+                D=D+A
+                @R13
                 M=D
                 @SP
                 M=M-1
+                A=M
+                D=M
+                @R13
+                A=M
+                M=D
                 """
                 
             case .pointer:
-                break
+                asm += """
+                @SP
+                M=M-1
+                A=M
+                D=M
+                @\(pointerSegmentBase + memoryAccess.index)
+                M=D
+                """
                 
             case .temp:
                 // let d = RAM[SP-1]
