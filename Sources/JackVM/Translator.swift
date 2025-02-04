@@ -10,10 +10,12 @@ typealias ASM = String
 struct Translator {
     nonisolated(unsafe) private static var labelId = 0
     private let stackBase = 256 // To 2047
+    private let tempSegmentBase = 5
     // FIXME: Arbitrary value used to complete 1st part.
-    private let localSegmentBase = 768
-    private let argumentSegmentBase = 1280
-    
+    private let localSegmentBase = 300
+    private let argumentSegmentBase = 400
+    private let thisSegmentBase = 3000
+    private let thatSegmentBase = 3010
     
     var bootstrapCode: ASM {
         """
@@ -90,6 +92,34 @@ struct Translator {
                 M=M+1
                 """
                 
+            case .this:
+                // let a = THIS[index]
+                // RAM[SP] = a
+                // SP++
+                asm += """
+                @\(thisSegmentBase + memoryAccess.index)
+                D=M
+                @SP
+                A=M
+                M=D
+                @SP
+                M=M+1
+                """
+                
+            case .that:
+                // let a = THAT[index]
+                // RAM[SP] = a
+                // SP++
+                asm += """
+                @\(thatSegmentBase + memoryAccess.index)
+                D=M
+                @SP
+                A=M
+                M=D
+                @SP
+                M=M+1
+                """
+                
             case .constant:
                 // let c
                 // RAM[SP] = c
@@ -97,6 +127,20 @@ struct Translator {
                 asm += """
                 @\(memoryAccess.constant)
                 D=A
+                @SP
+                A=M
+                M=D
+                @SP
+                M=M+1
+                """
+                
+            case .temp:
+                // let d = TEMP[index]
+                // RAM[SP] = d
+                // SP++
+                asm += """
+                @R\(tempSegmentBase + memoryAccess.index)
+                D=M
                 @SP
                 A=M
                 M=D
@@ -142,17 +186,50 @@ struct Translator {
                 break
                 
             case .this:
-                break
+                // let d = RAM[SP-1]
+                // THIS[index] = d
+                // SP--
+                asm += """
+                @SP
+                A=M-1
+                D=M
+                @\(thisSegmentBase + memoryAccess.index)
+                M=D
+                @SP
+                M=M-1
+                """
                 
             case .that:
-                break
+                // let d = RAM[SP-1]
+                // THAT[index] = d
+                // SP--
+                asm += """
+                @SP
+                A=M-1
+                D=M
+                @\(thatSegmentBase + memoryAccess.index)
+                M=D
+                @SP
+                M=M-1
+                """
                 
             case .pointer:
                 break
                 
             case .temp:
-                break
-                
+                // let d = RAM[SP-1]
+                // TEMP[index] = d
+                // SP--
+                asm += """
+                @SP
+                A=M-1
+                D=M
+                @R\(tempSegmentBase + memoryAccess.index)
+                M=D
+                @SP
+                M=M-1
+                """
+
             case .constant:
                 preconditionFailure() // TODO: Throw an error
             }
