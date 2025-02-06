@@ -47,7 +47,7 @@ struct Translator {
                     asmEquivalent = translate(arithmetic)
                     
                 default:
-                    preconditionFailure()
+                    preconditionFailure("Unhandled type of command.")
                 }
                 
                 return asmEquivalent
@@ -298,7 +298,7 @@ struct Translator {
                 """
 
             case .constant:
-                preconditionFailure() // TODO: Throw an error
+                preconditionFailure("Popping a constant is unsupported.")
             }
         }
         
