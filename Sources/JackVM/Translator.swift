@@ -18,6 +18,7 @@ struct Translator {
         
     var bootstrapCode: ASM {
         """
+        // bootstrap block
         @\(stackBase)
         D=A
         @SP
@@ -27,7 +28,7 @@ struct Translator {
     
     var terminationCode: ASM {
         """
-        
+        // termination block
         (END)
         @END
         0;JMP
@@ -37,14 +38,14 @@ struct Translator {
     func translate(commands: [Command]) -> ASM {
         let commandsCode = commands
             .map { command in
-                let asmEquivalent: ASM
+                var asmEquivalent: ASM = "// \(command)\n"
                 
                 switch command {
                 case let memoryAccess as MemoryCommand:
-                    asmEquivalent = translate(memoryAccess)
+                    asmEquivalent += translate(memoryAccess)
                     
                 case let arithmetic as ArithmeticCommand:
-                    asmEquivalent = translate(arithmetic)
+                    asmEquivalent += translate(arithmetic)
                     
                 default:
                     preconditionFailure("Unhandled type of command.")
