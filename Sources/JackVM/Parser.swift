@@ -11,7 +11,9 @@ struct Parser {
     }
     
     private func makeCommand(from line: String) throws(Error) -> Command {
-        let components = line.components(separatedBy: .whitespaces)
+        let components = line
+            .components(separatedBy: .whitespaces)
+            .filter { !$0.isEmpty }
         
         guard !components.isEmpty else { throw .emptyLine }
         
@@ -67,7 +69,7 @@ struct Parser {
             command = ProgramFlow(operation: operation, symbol: symbol)
             
         case .function, .call, .return:
-            guard components.count == 3 else {
+            guard components.count == 1 || components.count == 3 else {
                 throw .incompleteFunctionCommand(text: components.joined(separator: " "))
             }
             

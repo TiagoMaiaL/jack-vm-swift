@@ -102,7 +102,19 @@ struct ProgramFlow: ProgramFlowCommand {
 }
 
 struct Function: FunctionCommand {
-    var description: String { "\(operation.rawValue) \(name) \(count)" }
+    var description: String {
+        var description = operation.rawValue
+        
+        if let name {
+            description += " \(name)"
+        }
+        
+        if let count {
+            description += " \(count)"
+        }
+        
+        return description
+    }
     var operation: FunctionOperation
     var name: String?
     var count: Int?
