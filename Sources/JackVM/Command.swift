@@ -68,10 +68,11 @@ enum ProgramFlowOperation: String {
 
 protocol FunctionCommand: Command {
     var operation: FunctionOperation { get }
-    var name: String { get }
+    var name: String? { get }
     /// The number of local variables (when the command is a declaration),
     /// or the number of arguments provided (when the command is an invocation),
-    var count: Int { get }
+    /// or nil, if this is a return command.
+    var count: Int? { get }
 }
 
 enum FunctionOperation: String {
@@ -95,14 +96,14 @@ struct MemoryAccess: MemoryCommand {
 }
 
 struct ProgramFlow: ProgramFlowCommand {
+    var description: String { "\(operation.rawValue) \(symbol)"}
     var operation: ProgramFlowOperation
     var symbol: String
-    var description: String
 }
 
 struct Function: FunctionCommand {
+    var description: String { "\(operation.rawValue) \(name) \(count)" }
     var operation: FunctionOperation
-    var name: String
-    var count: Int
-    var description: String
+    var name: String?
+    var count: Int?
 }

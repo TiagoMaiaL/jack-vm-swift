@@ -54,8 +54,53 @@ struct Parser {
             
             command = Arithmetic(operation: operation)
             
+        case .label, .goTo, .ifGoTo:
+            guard components.count == 2 else {
+                throw .incompleteProgramFlowCommand(text: components.joined(separator: " "))
+            }
+            
+            guard let operation = ProgramFlowOperation(rawValue: keyword.rawValue) else {
+                preconditionFailure("Couldn't represent program-flow operation.")
+            }
+            
+            let symbol = components[1]
+            command = ProgramFlow(operation: operation, symbol: symbol)
+            
+        case .function, .call, .return:
+            guard components.count == 3 else {
+                throw .incompleteFunctionCommand(text: components.joined(separator: " "))
+            }
+            
+            let operation: FunctionOperation
+            
+            switch keyword {
+            case .function:
+                operation = .declare
+                
+            case .call:
+                operation = .invoke
+                
+            case .return:
+                operation = .return
+            
+            default: preconditionFailure("Couldn't represent function operation.")
+            }
+            
+            if operation == .return {
+                command = Function(operation: operation)
+                break
+            }
+            
+            let name = components[1]
+            
+            guard let count = Int(components[2]) else {
+                throw .unexpectedFunctionCount(text: components[2])
+            }
+            
+            command = Function(operation: operation, name: name, count: count)
+            
         default:
-            throw .unexpectedCommand(text: keyword.rawValue)
+            preconditionFailure("Unexpected keyword at command specifier: \(keyword)")
         }
         
         return command
@@ -87,6 +132,16 @@ struct Parser {
         case or
         case not
         
+        // Program Flow
+        case label
+        case goTo   = "goto"
+        case ifGoTo = "if-goto"
+        
+        // Function
+        case function
+        case call
+        case `return`
+        
         static var memorySegments: [Self] {
             [
                 .argument,
@@ -108,5 +163,8 @@ struct Parser {
         case incompleteMemoryCommand(text: String)
         case unexpectedMemorySegment(text: String)
         case unexpectedMemoryIndex(text: String)
+        case incompleteProgramFlowCommand(text: String)
+        case incompleteFunctionCommand(text: String)
+        case unexpectedFunctionCount(text: String)
     }
 }
