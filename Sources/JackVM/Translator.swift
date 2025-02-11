@@ -47,6 +47,9 @@ struct Translator {
                 case let arithmetic as ArithmeticCommand:
                     asmEquivalent += translate(arithmetic)
                     
+                case let programFlow as ProgramFlowCommand:
+                    asmEquivalent += translate(programFlow)
+                    
                 default:
                     preconditionFailure("Unhandled type of command.")
                 }
@@ -485,6 +488,33 @@ struct Translator {
             @SP
             A=M-1
             M=!M
+            """
+        }
+        
+        return asm
+    }
+    
+    private func translate(_ programFlow: ProgramFlowCommand) -> ASM {
+        var asm = ""
+        
+        switch programFlow.operation {
+        case .label:
+            asm += """
+            (\(programFlow.symbol))
+            """
+            
+        case .goTo:
+            asm += """
+            @\(programFlow.symbol)
+            0;JMP
+            """
+            
+        case .ifGoTo:
+            asm += """
+            @SP
+            D=M-1
+            @\(programFlow.symbol)
+            D;JGE
             """
         }
         
