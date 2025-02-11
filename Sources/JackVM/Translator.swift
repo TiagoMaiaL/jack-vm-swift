@@ -26,15 +26,6 @@ struct Translator {
         """
     }
     
-    var terminationCode: ASM {
-        """
-        \n// termination block
-        (END)
-        @END
-        0;JMP
-        """
-    }
-    
     func translate(commands: [Command]) -> ASM {
         let commandsCode = commands
             .map { command in
@@ -58,7 +49,7 @@ struct Translator {
             }
             .reduce("") { "\($0)\n\($1)" }
         
-        return bootstrapCode + commandsCode + terminationCode
+        return bootstrapCode + commandsCode
     }
     
     private func translate(_ memoryAccess: MemoryCommand) -> ASM {
