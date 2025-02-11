@@ -28,7 +28,7 @@ struct Translator {
     
     var terminationCode: ASM {
         """
-        // termination block
+        \n// termination block
         (END)
         @END
         0;JMP
@@ -512,9 +512,11 @@ struct Translator {
         case .ifGoTo:
             asm += """
             @SP
-            D=M-1
+            M=M-1
+            A=M
+            D=M
             @\(programFlow.symbol)
-            D;JGE
+            D;JGT
             """
         }
         
