@@ -12,9 +12,6 @@ struct Translator {
     private let stackBase = 256 // To 2047
     private let pointerSegmentBase = 3
     private let tempSegmentBase = 5
-    // FIXME: Arbitrary value used to complete 1st part.
-    private let localSegmentBase = 300
-    private let argumentSegmentBase = 400
         
     var bootstrapCode: ASM {
         """
@@ -59,11 +56,14 @@ struct Translator {
         case .push:
             switch memoryAccess.segment {
             case .argument:
-                // let a = ARGUMENT[index]
-                // RAM[SP] = a
+                // let d = RAM[ARG + index]
+                // RAM[SP] = d
                 // SP++
                 asm += """
-                @\(argumentSegmentBase + memoryAccess.index)
+                @ARG
+                D=M
+                @\(memoryAccess.index)
+                A=D+A
                 D=M
                 @SP
                 A=M
@@ -73,11 +73,14 @@ struct Translator {
                 """
                 
             case .local:
-                // let a = LOCAL[index]
-                // RAM[SP] = a
+                // let c = RAM[LCL + index]
+                // RAM[SP] = d
                 // SP++
                 asm += """
-                @\(localSegmentBase + memoryAccess.index)
+                @LCL
+                D=M
+                @\(memoryAccess.index)
+                A=D+A
                 D=M
                 @SP
                 A=M
@@ -181,31 +184,49 @@ struct Translator {
         case .pop:
             switch memoryAccess.segment {
             case .argument:
-                // D = RAM[SP-1]
-                // ARGUMENT[index] = D
+                // let argBase = RAM[ARG]
+                // let addr = argBase + index
+                // RAM[13] = addr // R13 points to the address
                 // SP--
+                // let d = RAM[SP]
+                // RAM[RAM[13]] = d
                 asm += """
-                @SP
-                A=M-1
+                @ARG
                 D=M
-                @\(argumentSegmentBase + memoryAccess.index)
+                @\(memoryAccess.index)
+                D=D+A
+                @R13
                 M=D
                 @SP
                 M=M-1
+                A=M
+                D=M
+                @R13
+                A=M
+                M=D
                 """
                 
             case .local:
-                // D = RAM[SP-1]
-                // LOCAL[index] = D
+                // let lclBase = RAM[LCL]
+                // let addr = lclBase + index
+                // RAM[13] = addr // R13 points to the address
                 // SP--
+                // let d = RAM[SP]
+                // RAM[RAM[13]] = d
                 asm += """
-                @SP
-                A=M-1
+                @LCL
                 D=M
-                @\(localSegmentBase + memoryAccess.index)
+                @\(memoryAccess.index)
+                D=D+A
+                @R13
                 M=D
                 @SP
                 M=M-1
+                A=M
+                D=M
+                @R13
+                A=M
+                M=D
                 """
                 
             case .static:
