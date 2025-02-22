@@ -38,6 +38,9 @@ struct Translator {
                 case let programFlow as ProgramFlowCommand:
                     asmEquivalent += translate(programFlow)
                     
+                case let function as FunctionCommand:
+                    asmEquivalent += translate(function)
+                    
                 default:
                     preconditionFailure("Unhandled type of command.")
                 }
@@ -534,6 +537,165 @@ struct Translator {
         
         return asm
     }
+    
+    private func translate(_ function: FunctionCommand) -> ASM {
+        let asm: ASM
+        
+        switch function.operation {
+        case .declare:
+            guard let name = function.name,
+                  let count = function.count else {
+                preconditionFailure("func decl: name must be set.")
+            }
+            
+            // TODO: Determine how to setup THIS/THAT segments
+            
+            // (LABEL)
+            // LCL[0..<nLocals] = 0
+            // SP = SP + nLocals (working function stack)
+            
+            var _asm: ASM = translate(
+                SynteticProgramFlow(
+                    operation: .label,
+                    symbol: name
+                )
+            )
+            
+            for localIndex in 0..<count {
+                _asm += translate(
+                    SynteticMemoryAccess(
+                        operation: .push,
+                        constant: 0
+                    )
+                )
+                _asm += translate(
+                    SynteticMemoryAccess(
+                        operation: .pop,
+                        segment: .local,
+                        index: localIndex
+                    )
+                )
+            }
+            
+            for _ in 0..<count {
+                _asm += """
+                @SP
+                M=M+1
+                """
+            }
+            
+            asm = _asm
+            
+        case .invoke:
+            //
+            var _asm = """
+            
+            """
+            // TODO: Set callee arg segment
+            // TODO: Preserve caller segments
+            // TODO: Generate unique return label
+            // TODO: Store reference to return address
+            asm = ""
+            
+        case .return:
+            // FRAME            = LCL
+            // RETURN_VAL       = RAM[RAM[SP-1]]
+            // POPPED_SP        = ARG
+            //
+            // ... restore previous segments
+            //
+            // RAM[POPPED_SP]   = RETURN_VAL
+            // SP               = POPPED_SP + 1
+            // THAT             = FRAME - 1
+            // THIS             = FRAME - 2
+            // ARG              = FRAME - 3
+            // LCL              = FRAME - 4
+            // RETURN           = FRAME - 5
+            // GOTO RETURN
+            
+            var _asm = """
+            @LCL
+            D=M
+            @R5
+            M=D
+            """
+            
+            _asm += """
+            @SP
+            A=M-1
+            D=M
+            @R6
+            M=D
+            """
+            
+            _asm += """
+            @ARG
+            D=M
+            """
+            
+            _asm += """
+            @SP
+            M=D
+            @R6
+            D=M
+            @SP
+            A=M
+            M=D
+            @SP
+            M=M+1
+            """
+            
+            _asm += """
+            @R5
+            D=M
+            D=D-1
+            @THAT
+            M=D
+            D=D-1
+            @THIS
+            M=D
+            D=D-1
+            @ARG
+            M=D
+            D=D-1
+            @LCL
+            M=D
+            D=D-1
+            """
+            
+            _asm += """
+            A=D
+            0;JMP
+            """
+            
+            asm = _asm
+        }
+        
+        return asm
+    }
+}
+
+fileprivate struct SynteticMemoryAccess: MemoryCommand {
+    let operation: MemoryOperation
+    let segment: MemorySegment
+    let index: Int
+    var description: String { "\(self)" }
+    
+    init(operation: MemoryOperation, segment: MemorySegment, index: Int) {
+        self.operation = operation
+        self.segment = segment
+        self.index = index
+    }
+    
+    init(operation: MemoryOperation, constant: Int) {
+        self.init(operation: operation, segment: .constant, index: constant)
+    }
+}
+
+fileprivate struct SynteticProgramFlow: ProgramFlowCommand {
+    let operation: ProgramFlowOperation
+    let symbol: String
+    var description: String { "\(self)" }
 }
 
 fileprivate extension MemoryCommand {
