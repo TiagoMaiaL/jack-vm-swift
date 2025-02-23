@@ -559,7 +559,7 @@ struct Translator {
                     operation: .label,
                     symbol: name
                 )
-            )
+            ) + "\n"
             
             for localIndex in 0..<count {
                 _asm += translate(
@@ -567,20 +567,20 @@ struct Translator {
                         operation: .push,
                         constant: 0
                     )
-                )
+                ) + "\n"
                 _asm += translate(
                     SynteticMemoryAccess(
                         operation: .pop,
                         segment: .local,
                         index: localIndex
                     )
-                )
+                ) + "\n"
             }
             
             for _ in 0..<count {
                 _asm += """
                 @SP
-                M=M+1
+                M=M+1\n
                 """
             }
             
@@ -617,7 +617,7 @@ struct Translator {
             @LCL
             D=M
             @R5
-            M=D
+            M=D\n
             """
             
             _asm += """
@@ -625,12 +625,12 @@ struct Translator {
             A=M-1
             D=M
             @R6
-            M=D
+            M=D\n
             """
             
             _asm += """
             @ARG
-            D=M
+            D=M\n
             """
             
             _asm += """
@@ -642,7 +642,7 @@ struct Translator {
             A=M
             M=D
             @SP
-            M=M+1
+            M=M+1\n
             """
             
             _asm += """
@@ -660,12 +660,12 @@ struct Translator {
             D=D-1
             @LCL
             M=D
-            D=D-1
+            D=D-1\n
             """
             
             _asm += """
             A=D
-            0;JMP
+            0;JMP\n
             """
             
             asm = _asm
