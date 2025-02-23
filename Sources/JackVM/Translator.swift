@@ -647,24 +647,35 @@ struct Translator {
             
             _asm += """
             @R5
+            M=M-1
+            A=M
             D=M
-            D=D-1
             @THAT
             M=D
-            D=D-1
+            @R5
+            M=M-1
+            A=M
+            D=M
             @THIS
             M=D
-            D=D-1
+            @R5
+            M=M-1
+            A=M
+            D=M
             @ARG
             M=D
-            D=D-1
+            @R5
+            M=M-1
+            A=M
+            D=M
             @LCL
-            M=D
-            D=D-1\n
+            M=D\n
             """
             
             _asm += """
-            A=D
+            @R5
+            M=M-1
+            A=M
             0;JMP\n
             """
             
