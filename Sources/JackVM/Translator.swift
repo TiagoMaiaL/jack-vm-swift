@@ -9,6 +9,7 @@ typealias ASM = String
 
 struct Translator {
     nonisolated(unsafe) private static var labelId = 0
+    nonisolated(unsafe) private static var shouldIncludeBoostrapCode = true
     private let stackBase = 256 // To 2047
     private let pointerSegmentBase = 3
     private let tempSegmentBase = 5
@@ -49,7 +50,12 @@ struct Translator {
             }
             .reduce("") { "\($0)\n\($1)" }
         
-        return bootstrapCode + commandsCode
+        if Self.shouldIncludeBoostrapCode {
+            Self.shouldIncludeBoostrapCode = false
+            return bootstrapCode + commandsCode
+        } else {
+            return commandsCode
+        }
     }
     
     private func translate(_ memoryAccess: MemoryCommand) -> ASM {
@@ -553,7 +559,7 @@ struct Translator {
             // LCL[0..<nLocals] = 0
             // SP = SP + nLocals (working function stack)
             
-            var _asm: ASM = translate(SynteticProgramFlow(label: name)) + "\n"
+            var _asm: ASM = translate(SynteticProgramFlow(label: name))
             
             for localIndex in 0 ..< lclCount {
                 _asm += translate(SynteticMemoryAccess(pushConstant: 0)) + "\n"
@@ -651,7 +657,7 @@ struct Translator {
             _asm += "@SP\n"
             for _ in 0 ..< argCount { _asm += "M=M+1\n" }
             
-            _asm += translate(SynteticProgramFlow(label: returnAddressLabel)) + "\n"
+            _asm += translate(SynteticProgramFlow(label: returnAddressLabel))
             
             asm = _asm
             
@@ -734,7 +740,7 @@ struct Translator {
             @R5
             M=M-1
             A=M
-            0;JMP\n
+            0;JMP
             """
             
             asm = _asm

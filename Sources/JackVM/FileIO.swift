@@ -13,10 +13,18 @@ import RegexBuilder
 struct FileIO {
     typealias VMContent = Array<String>
     private let fileManager = FileManager.default
+    
+    public func contents(at path: String) throws(FileError) -> [VMContent] {
+        if try isDirectory(filePath: path) {
+            return try contents(fromDirectoryAt: path)
+        } else {
+            return [try contents(fromFileAt: path)]
+        }
+    }
 }
 
 extension FileIO {
-    func isDirectory(filePath: String) throws(FileError) -> Bool {
+    private func isDirectory(filePath: String) throws(FileError) -> Bool {
         let isDir = UnsafeMutablePointer<ObjCBool>.allocate(capacity: 1)
         isDir.initialize(to: false)
         
@@ -29,41 +37,37 @@ extension FileIO {
         return isDir.pointee.boolValue
     }
     
-    func files(at filePath: String) throws(FileError) -> [String] {
+    private func files(at filePath: String) throws(FileError) -> [String] {
         guard try isDirectory(filePath: filePath) else {
             throw .notDirectory
         }
         
         do {
-            return try fileManager.contentsOfDirectory(atPath: filePath)
+            return try fileManager
+                .contentsOfDirectory(atPath: filePath)
+                .map { "./\(filePath)/\($0)" }
         } catch {
             throw .invalidContent
         }
     }
     
-    func isVmFile(name: String) -> Bool {
+    private func isVmFile(name: String) -> Bool {
         let nameComponents = name.components(separatedBy: ".")
         return !nameComponents.isEmpty && nameComponents.last == "vm"
     }
     
-    func contents(fromDirectoryAt path: String) throws(FileError) -> [VMContent] {
-        // TODO: Refactor to use map, filter, and map like so:
-        //return try files(at: path)
-        //    .filter { isVmFile(name: $0) }
-        //    .map { try contents(fromFolderAt: $0) }
-        
+    private func contents(fromDirectoryAt path: String) throws(FileError) -> [VMContent] {
         let vmFiles = try files(at: path).filter { isVmFile(name: $0) }
         var dirContents = [VMContent]()
         
         for vmFilePath in vmFiles {
-            let fileCommands = try contents(fromFolderAt: vmFilePath)
-            dirContents.append(fileCommands)
+            dirContents.append(try contents(fromFileAt: vmFilePath))
         }
         
         return dirContents
     }
     
-    func contents(fromFolderAt path: String) throws(FileError) -> VMContent {
+    private func contents(fromFileAt path: String) throws(FileError) -> VMContent {
         guard let data = fileManager.contents(atPath: path) else {
             throw .fileNotFound
         }

@@ -10,24 +10,27 @@ import ArgumentParser
 @main
 struct JackVM: ParsableCommand {
     @Argument(
-        help: "Path to a .vm file or directory contaninig multiple ones."
+        help: "Path to a .vm file or to a directory containing multiple .vm files."
     )
     var vmFilePath: String
     
     @Argument(
-        help: "Path to the .asm file being generated."
+        help: "Path to the .asm file being generated. If nil, output will be in out.asm file."
     )
-    var asmOutputPath: String
+    var asmOutputPath: String?
 
     func run() throws {
         let io = FileIO()
         let parser = Parser()
         let translator = Translator()
-
-        let content = try io.contents(fromFolderAt: vmFilePath)
-        let commands = try parser.parse(content: content)
-        let asm = translator.translate(commands: commands)
         
-        io.write(asm, to: asmOutputPath)
+        let asm = try io.contents(at: vmFilePath)
+            .map { try parser.parse(content: $0) }
+            .map { translator.translate(commands: $0) }
+            .reduce("") { partialResult, translatedArm in
+                partialResult + translatedArm
+            }
+        
+        io.write(asm, to: asmOutputPath ?? "out.asm")
     }
 }
