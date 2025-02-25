@@ -12,11 +12,59 @@ import RegexBuilder
 
 struct FileIO {
     typealias VMContent = Array<String>
+    private let fileManager = FileManager.default
 }
-    
+
 extension FileIO {
+    func isDirectory(filePath: String) throws(FileError) -> Bool {
+        let isDir = UnsafeMutablePointer<ObjCBool>.allocate(capacity: 1)
+        isDir.initialize(to: false)
+        
+        defer { isDir.deallocate() }
+        
+        guard fileManager.fileExists(atPath: filePath, isDirectory: isDir) else {
+            throw .fileNotFound
+        }
+        
+        return isDir.pointee.boolValue
+    }
+    
+    func files(at filePath: String) throws(FileError) -> [String] {
+        guard try isDirectory(filePath: filePath) else {
+            throw .notDirectory
+        }
+        
+        do {
+            return try fileManager.contentsOfDirectory(atPath: filePath)
+        } catch {
+            throw .invalidContent
+        }
+    }
+    
+    func isVmFile(name: String) -> Bool {
+        let nameComponents = name.components(separatedBy: ".")
+        return !nameComponents.isEmpty && nameComponents.last == "vm"
+    }
+    
+    func contents(fromDirectoryAt path: String) throws(FileError) -> [VMContent] {
+        // TODO: Refactor to use map, filter, and map like so:
+        //return try files(at: path)
+        //    .filter { isVmFile(name: $0) }
+        //    .map { try contents(fromFolderAt: $0) }
+        
+        let vmFiles = try files(at: path).filter { isVmFile(name: $0) }
+        var dirContents = [VMContent]()
+        
+        for vmFilePath in vmFiles {
+            let fileCommands = try contents(fromFolderAt: vmFilePath)
+            dirContents.append(fileCommands)
+        }
+        
+        return dirContents
+    }
+    
     func contents(fromFolderAt path: String) throws(FileError) -> VMContent {
-        guard let data = FileManager().contents(atPath: path) else {
+        guard let data = fileManager.contents(atPath: path) else {
             throw .fileNotFound
         }
         
@@ -31,8 +79,6 @@ extension FileIO {
             .map(clearingComments)
             .filter { !$0.isEmpty }
     }
-    
-    // TODO: Add method to get the contents from all VM files within a folder.
     
     private func clearingComments(from line: String) -> String {
         var line = line
@@ -68,5 +114,6 @@ extension FileIO {
     enum FileError: Error {
         case fileNotFound
         case invalidContent
+        case notDirectory
     }
 }
