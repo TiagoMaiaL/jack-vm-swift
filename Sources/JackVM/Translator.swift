@@ -543,8 +543,7 @@ struct Translator {
         
         switch function.operation {
         case .declare:
-            guard let name = function.name,
-                  let count = function.count else {
+            guard let name = function.name, let lclCount = function.count else {
                 preconditionFailure("func decl: name must be set.")
             }
             
@@ -554,20 +553,10 @@ struct Translator {
             // LCL[0..<nLocals] = 0
             // SP = SP + nLocals (working function stack)
             
-            var _asm: ASM = translate(
-                SynteticProgramFlow(
-                    operation: .label,
-                    symbol: name
-                )
-            ) + "\n"
+            var _asm: ASM = translate(SynteticProgramFlow(label: name)) + "\n"
             
-            for localIndex in 0..<count {
-                _asm += translate(
-                    SynteticMemoryAccess(
-                        operation: .push,
-                        constant: 0
-                    )
-                ) + "\n"
+            for localIndex in 0 ..< lclCount {
+                _asm += translate(SynteticMemoryAccess(pushConstant: 0)) + "\n"
                 _asm += translate(
                     SynteticMemoryAccess(
                         operation: .pop,
@@ -577,7 +566,7 @@ struct Translator {
                 ) + "\n"
             }
             
-            for _ in 0..<count {
+            for _ in 0 ..< lclCount {
                 _asm += """
                 @SP
                 M=M+1\n
@@ -587,15 +576,84 @@ struct Translator {
             asm = _asm
             
         case .invoke:
-            //
-            var _asm = """
+            // let return-addr
+            // store return-addr
+            // store LCL
+            // store ARG
+            // store THIS
+            // store THAT
+            // ARG = SP - nArgs - 5
+            // LCL = SP
+            // go-to return-addr
+            // (return-addr)
             
+            guard let name = function.name, let argCount = function.count else {
+                preconditionFailure("func call: name, count must be set.")
+            }
+            
+            let returnAddressLabel = "RETURN_\(name)_\(Self.labelId)"
+            Self.labelId += 1
+            
+            var _asm = """
+            @\(returnAddressLabel)
+            D=A
+            @SP
+            A=M
+            M=D
+            @LCL
+            D=M
+            @SP
+            M=M+1
+            A=M
+            M=D
+            @ARG
+            D=M
+            @SP
+            M=M+1
+            A=M
+            M=D
+            @THIS
+            D=M
+            @SP
+            M=M+1
+            A=M
+            M=D
+            @THAT
+            D=M
+            @SP
+            M=M+1
+            A=M
+            M=D\n
             """
-            // TODO: Set callee arg segment
-            // TODO: Preserve caller segments
-            // TODO: Generate unique return label
-            // TODO: Store reference to return address
-            asm = ""
+            
+            _asm += """
+            @SP
+            D=M
+            D=D-1
+            D=D-1
+            D=D-1
+            D=D-1
+            D=D-1\n
+            """
+            for _ in 0 ..< argCount { _asm += "D=D-1\n" }
+            _asm += """
+            @ARG
+            M=D\n
+            """
+            
+            _asm += """
+            @SP
+            D=M
+            @LCL
+            M=D\n
+            """
+            
+            _asm += "@SP\n"
+            for _ in 0 ..< argCount { _asm += "M=M+1\n" }
+            
+            _asm += translate(SynteticProgramFlow(label: returnAddressLabel)) + "\n"
+            
+            asm = _asm
             
         case .return:
             // FRAME            = LCL
@@ -701,12 +759,25 @@ fileprivate struct SynteticMemoryAccess: MemoryCommand {
     init(operation: MemoryOperation, constant: Int) {
         self.init(operation: operation, segment: .constant, index: constant)
     }
+    
+    init(pushConstant constant: Int) {
+        self.init(operation: .push, constant: constant)
+    }
 }
 
 fileprivate struct SynteticProgramFlow: ProgramFlowCommand {
     let operation: ProgramFlowOperation
     let symbol: String
     var description: String { "\(self)" }
+    
+    init(operation: ProgramFlowOperation, symbol: String) {
+        self.operation = operation
+        self.symbol = symbol
+    }
+    
+    init(label: String) {
+        self.init(operation: .label, symbol: label)
+    }
 }
 
 fileprivate extension MemoryCommand {
