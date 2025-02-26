@@ -538,7 +538,7 @@ struct Translator {
             A=M
             D=M
             @\(programFlow.symbol)
-            D;JGT
+            D;JNE
             """
         }
         
