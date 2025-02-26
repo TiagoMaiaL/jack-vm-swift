@@ -21,6 +21,7 @@ struct Translator {
         D=A
         @SP
         M=D
+        \(translate(SynteticProgramFlow(operation: .goTo, symbol: "Sys.init")))
         """
     }
     
@@ -590,7 +591,7 @@ struct Translator {
             // store THAT
             // ARG = SP - nArgs - 5
             // LCL = SP
-            // go-to return-addr
+            // go-to func-label
             // (return-addr)
             
             guard let name = function.name, let argCount = function.count else {
@@ -606,30 +607,36 @@ struct Translator {
             @SP
             A=M
             M=D
+            @SP
+            M=M+1
             @LCL
             D=M
             @SP
-            M=M+1
             A=M
             M=D
+            @SP
+            M=M+1
             @ARG
             D=M
             @SP
-            M=M+1
             A=M
             M=D
+            @SP
+            M=M+1
             @THIS
             D=M
             @SP
-            M=M+1
             A=M
             M=D
+            @SP
+            M=M+1
             @THAT
             D=M
             @SP
-            M=M+1
             A=M
-            M=D\n
+            M=D
+            @SP
+            M=M+1\n
             """
             
             _asm += """
@@ -654,9 +661,7 @@ struct Translator {
             M=D\n
             """
             
-            _asm += "@SP\n"
-            for _ in 0 ..< argCount { _asm += "M=M+1\n" }
-            
+            _asm += translate(SynteticProgramFlow(operation: .goTo, symbol: name)) + "\n"
             _asm += translate(SynteticProgramFlow(label: returnAddressLabel))
             
             asm = _asm
@@ -739,6 +744,7 @@ struct Translator {
             _asm += """
             @R5
             M=M-1
+            A=M
             A=M
             0;JMP
             """
