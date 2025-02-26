@@ -21,7 +21,7 @@ struct Translator {
         D=A
         @SP
         M=D
-        \(translate(SynteticProgramFlow(operation: .goTo, symbol: "Sys.init")))
+        \(translate(SynteticFunction.callSysInit))
         """
     }
     
@@ -794,4 +794,17 @@ fileprivate struct SynteticProgramFlow: ProgramFlowCommand {
 
 fileprivate extension MemoryCommand {
     var constant: Int { index }
+}
+
+fileprivate struct SynteticFunction: FunctionCommand {
+    var operation: FunctionOperation
+    var name: String?
+    var count: Int?
+    var description: String { "\(self)" }
+}
+
+extension SynteticFunction {
+    static var callSysInit: SynteticFunction {
+        .init(operation: .invoke, name: "Sys.init", count: 0)
+    }
 }
