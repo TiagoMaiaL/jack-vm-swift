@@ -550,17 +550,20 @@ struct Translator {
         
         switch function.operation {
         case .declare:
-            guard let name = function.name, let lclCount = function.count else {
-                preconditionFailure("func decl: name must be set.")
-            }
-            
-            // TODO: Determine how to setup THIS/THAT segments
-            
             // (LABEL)
             // LCL[0..<nLocals] = 0
             // SP = SP + nLocals (working function stack)
             
-            var _asm: ASM = translate(SynteticProgramFlow(label: name))
+            guard let name = function.name, let lclCount = function.count else {
+                preconditionFailure("func decl: name, localCount must be set.")
+            }
+             
+            var _asm: ASM = translate(SynteticProgramFlow(label: name)) + "\n"
+            
+            for _ in 0 ..< lclCount {
+                _asm += "@SP\n"
+                _asm += "M=M+1\n"
+            }
             
             for localIndex in 0 ..< lclCount {
                 _asm += translate(SynteticMemoryAccess(pushConstant: 0)) + "\n"
@@ -571,13 +574,6 @@ struct Translator {
                         index: localIndex
                     )
                 ) + "\n"
-            }
-            
-            for _ in 0 ..< lclCount {
-                _asm += """
-                @SP
-                M=M+1\n
-                """
             }
             
             asm = _asm
@@ -594,14 +590,27 @@ struct Translator {
             // go-to func-label
             // (return-addr)
             
-            guard let name = function.name, let argCount = function.count else {
+            guard let name = function.name, var argCount = function.count else {
                 preconditionFailure("func call: name, count must be set.")
+            }
+            
+            var _asm: ASM = ""
+            
+            // If not args are provided, leave space for
+            // return value in the stack, so return address is not
+            // overriden by return value.
+            if argCount == 0 {
+                _asm += """
+                @SP
+                M=M+1\n
+                """
+                argCount = 1
             }
             
             let returnAddressLabel = "RETURN_\(name)_\(Self.labelId)"
             Self.labelId += 1
             
-            var _asm = """
+            _asm += """
             @\(returnAddressLabel)
             D=A
             @SP
