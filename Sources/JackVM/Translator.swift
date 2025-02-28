@@ -138,8 +138,11 @@ struct Translator {
                 """
                 
             case .static:
+                guard let fileName = memoryAccess.fileName else {
+                    preconditionFailure("push static command must have fileName.")
+                }
                 asm += """
-                @static.\(memoryAccess.index)
+                @\(fileName).\(memoryAccess.index)
                 D=M
                 @SP
                 A=M
@@ -240,16 +243,18 @@ struct Translator {
                 """
                 
             case .static:
+                guard let fileName = memoryAccess.fileName else {
+                    preconditionFailure("pop static command must have fileName.")
+                }
                 // D = RAM[SP-1]
                 // RAM[static_addr] = D
                 // SP--
-                // TODO: Use the file name and var as the label
                 asm += """
                 @SP
                 M=M-1
                 A=M
                 D=M
-                @static.\(memoryAccess.index)
+                @\(fileName).\(memoryAccess.index)
                 M=D
                 """
                 
@@ -694,7 +699,7 @@ struct Translator {
             var _asm = """
             @LCL
             D=M
-            @R5
+            @R7
             M=D\n
             """
             
@@ -702,7 +707,7 @@ struct Translator {
             @SP
             A=M-1
             D=M
-            @R6
+            @R8
             M=D\n
             """
             
@@ -714,7 +719,7 @@ struct Translator {
             _asm += """
             @SP
             M=D
-            @R6
+            @R8
             D=M
             @SP
             A=M
@@ -724,25 +729,25 @@ struct Translator {
             """
             
             _asm += """
-            @R5
+            @R7
             M=M-1
             A=M
             D=M
             @THAT
             M=D
-            @R5
+            @R7
             M=M-1
             A=M
             D=M
             @THIS
             M=D
-            @R5
+            @R7
             M=M-1
             A=M
             D=M
             @ARG
             M=D
-            @R5
+            @R7
             M=M-1
             A=M
             D=M
@@ -751,7 +756,7 @@ struct Translator {
             """
             
             _asm += """
-            @R5
+            @R7
             M=M-1
             A=M
             A=M
@@ -766,12 +771,14 @@ struct Translator {
 }
 
 fileprivate struct SynteticMemoryAccess: MemoryCommand {
+    let fileName: String?
     let operation: MemoryOperation
     let segment: MemorySegment
     let index: Int
     var description: String { "\(self)" }
     
     init(operation: MemoryOperation, segment: MemorySegment, index: Int) {
+        self.fileName = nil
         self.operation = operation
         self.segment = segment
         self.index = index

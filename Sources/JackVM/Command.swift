@@ -30,6 +30,7 @@ enum ArithmeticOperation: String {
 // MARK: Memory
 
 protocol MemoryCommand: Command {
+    var fileName: String? { get }
     var operation: MemoryOperation { get }
     var segment: MemorySegment { get }
     var index: Int { get }
@@ -90,6 +91,7 @@ struct Arithmetic: ArithmeticCommand {
 
 struct MemoryAccess: MemoryCommand {
     var description: String { "\(operation.rawValue) \(segment.rawValue) \(index)" }
+    let fileName: String?
     let operation: MemoryOperation
     let segment: MemorySegment
     let index: Int

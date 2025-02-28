@@ -11,7 +11,7 @@ import RegexBuilder
 // MARK: - VM input
 
 struct FileIO {
-    typealias VMContent = Array<String>
+    typealias VMContent = (fileName: String, commands: Array<String>)
     private let fileManager = FileManager.default
     
     public func contents(at path: String) throws(FileError) -> [VMContent] {
@@ -56,6 +56,14 @@ extension FileIO {
         return !nameComponents.isEmpty && nameComponents.last == "vm"
     }
     
+    private func fileName(fromPath path: String) -> String {
+        let nameComponents = path.components(separatedBy: ".")
+        guard !nameComponents.isEmpty else {
+            preconditionFailure("File must have a name.")
+        }
+        return nameComponents[0]
+    }
+    
     private func contents(fromDirectoryAt path: String) throws(FileError) -> [VMContent] {
         let vmFiles = try files(at: path).filter { isVmFile(name: $0) }
         var dirContents = [VMContent]()
@@ -76,12 +84,14 @@ extension FileIO {
             throw .invalidContent
         }
         
-        return text
+        let commands = text
             .components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .map { $0.trimmingCharacters(in: .controlCharacters) }
             .map(clearingComments)
             .filter { !$0.isEmpty }
+        
+        return (fileName: fileName(fromPath: path), commands: commands)
     }
     
     private func clearingComments(from line: String) -> String {

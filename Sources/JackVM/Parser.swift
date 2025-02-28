@@ -6,11 +6,19 @@
 //
 
 struct Parser {
-    func parse(content: FileIO.VMContent) throws -> [Command] {
-        try content.map(makeCommand)
+    private let fileName: String
+    private let lines: [String]
+    
+    init(content: FileIO.VMContent) {
+        self.fileName = content.fileName
+        self.lines = content.commands
     }
     
-    private func makeCommand(from line: String) throws(Error) -> Command {
+    func parse() throws -> [Command] {
+        return try lines.map(makeCommand)
+    }
+    
+    private func makeCommand(line: String) throws(Error) -> Command {
         let components = line
             .components(separatedBy: .whitespaces)
             .filter { !$0.isEmpty }
@@ -44,6 +52,7 @@ struct Parser {
             }
             
             command = MemoryAccess(
+                fileName: fileName,
                 operation: operation,
                 segment: segment,
                 index: memoryIndex
@@ -99,7 +108,11 @@ struct Parser {
                 throw .unexpectedFunctionCount(text: components[2])
             }
             
-            command = Function(operation: operation, name: name, count: count)
+            command = Function(
+                operation: operation,
+                name: name,
+                count: count
+            )
             
         default:
             preconditionFailure("Unexpected keyword at command specifier: \(keyword)")
