@@ -604,10 +604,11 @@ struct Translator {
             
             var _asm: ASM = ""
             
-            // If not args are provided, leave space for
+            // If no args are provided, leave space for
             // return value in the stack, so return address is not
             // overriden by return value.
-            if argCount == 0 {
+            // Exception to the rule is sys.init.
+            if argCount == 0, callingName != SynteticFunction.sysInitName {
                 _asm += """
                 @SP
                 M=M+1\n
@@ -615,7 +616,7 @@ struct Translator {
                 argCount = 1
             }
             
-            let uniqueReturnAddressLabel = "\(Self.labelId).\(returnAddressLabel)"
+            let uniqueReturnAddressLabel = "\(returnAddressLabel).\(Self.labelId)"
             Self.labelId += 1
             
             _asm += """
@@ -826,11 +827,12 @@ fileprivate struct SynteticFunction: FunctionCommand {
 }
 
 extension SynteticFunction {
+    static let sysInitName = "Sys.init"
     static var callSysInit: SynteticFunction {
         .init(
             wrappingFunctionName: "globalscope",
             operation: .invoke,
-            name: "Sys.init",
+            name: sysInitName,
             count: 0
         )
     }

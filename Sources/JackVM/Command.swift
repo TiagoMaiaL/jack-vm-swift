@@ -103,7 +103,7 @@ extension FunctionCommand {
               let wrappingFunctionName else {
             return nil
         }
-        return "\(wrappingFunctionName).\(functionName).return-address"
+        return "\(wrappingFunctionName).\(functionName).returnaddress"
     }
 }
 
