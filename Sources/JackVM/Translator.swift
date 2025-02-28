@@ -138,11 +138,11 @@ struct Translator {
                 """
                 
             case .static:
-                guard let fileName = memoryAccess.fileName else {
+                guard let staticSymbol = memoryAccess.staticSymbol else {
                     preconditionFailure("push static command must have fileName.")
                 }
                 asm += """
-                @\(fileName).\(memoryAccess.index)
+                @\(staticSymbol)
                 D=M
                 @SP
                 A=M
@@ -243,7 +243,7 @@ struct Translator {
                 """
                 
             case .static:
-                guard let fileName = memoryAccess.fileName else {
+                guard let staticSymbol = memoryAccess.staticSymbol else {
                     preconditionFailure("pop static command must have fileName.")
                 }
                 // D = RAM[SP-1]
@@ -254,7 +254,7 @@ struct Translator {
                 M=M-1
                 A=M
                 D=M
-                @\(fileName).\(memoryAccess.index)
+                @\(staticSymbol)
                 M=D
                 """
                 
@@ -522,17 +522,21 @@ struct Translator {
     }
     
     private func translate(_ programFlow: ProgramFlowCommand) -> ASM {
+        guard let uniqueSymbol = programFlow.uniqueSymbol else {
+            preconditionFailure("Symbol must be declared within functions")
+        }
+        
         var asm = ""
         
         switch programFlow.operation {
         case .label:
             asm += """
-            (\(programFlow.symbol))
+            (\(uniqueSymbol))
             """
             
         case .goTo:
             asm += """
-            @\(programFlow.symbol)
+            @\(uniqueSymbol)
             0;JMP
             """
             
@@ -542,7 +546,7 @@ struct Translator {
             M=M-1
             A=M
             D=M
-            @\(programFlow.symbol)
+            @\(uniqueSymbol)
             D;JNE
             """
         }
@@ -794,11 +798,13 @@ fileprivate struct SynteticMemoryAccess: MemoryCommand {
 }
 
 fileprivate struct SynteticProgramFlow: ProgramFlowCommand {
+    let wrappingFunctionName: String?
     let operation: ProgramFlowOperation
     let symbol: String
     var description: String { "\(self)" }
     
     init(operation: ProgramFlowOperation, symbol: String) {
+        self.wrappingFunctionName = nil
         self.operation = operation
         self.symbol = symbol
     }

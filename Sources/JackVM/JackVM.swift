@@ -24,7 +24,10 @@ struct JackVM: ParsableCommand {
         let translator = Translator()
         
         let asm = try io.contents(at: vmFilePath)
-            .map { try Parser(content: $0).parse() }
+            .map {
+                var parser = Parser(content: $0)
+                return try parser.parse()
+            }
             .map { translator.translate(commands: $0) }
             .reduce("") { partialResult, translatedArm in
                 partialResult + translatedArm

@@ -8,17 +8,18 @@
 struct Parser {
     private let fileName: String
     private let lines: [String]
+    private var currentFunctionDecl: FunctionCommand?
     
     init(content: FileIO.VMContent) {
         self.fileName = content.fileName
         self.lines = content.commands
     }
     
-    func parse() throws -> [Command] {
-        return try lines.map(makeCommand)
+    mutating func parse() throws -> [Command] {
+        return try lines.map { try makeCommand(line: $0) }
     }
     
-    private func makeCommand(line: String) throws(Error) -> Command {
+    private mutating func makeCommand(line: String) throws(Parser.Error) -> Command {
         let components = line
             .components(separatedBy: .whitespaces)
             .filter { !$0.isEmpty }
@@ -75,7 +76,11 @@ struct Parser {
             }
             
             let symbol = components[1]
-            command = ProgramFlow(operation: operation, symbol: symbol)
+            command = ProgramFlow(
+                operation: operation,
+                symbol: symbol,
+                wrappingFunctionName: currentFunctionDecl?.name
+            )
             
         case .function, .call, .return:
             guard components.count == 1 || components.count == 3 else {
@@ -113,6 +118,10 @@ struct Parser {
                 name: name,
                 count: count
             )
+            
+            if operation == .declare {
+                currentFunctionDecl = command as? FunctionCommand
+            }
             
         default:
             preconditionFailure("Unexpected keyword at command specifier: \(keyword)")

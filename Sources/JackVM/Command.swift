@@ -36,6 +36,15 @@ protocol MemoryCommand: Command {
     var index: Int { get }
 }
 
+extension MemoryCommand {
+    var staticSymbol: String? {
+        guard segment == .constant, let fileName else {
+            return nil
+        }
+        return "\(fileName).\(index)"
+    }
+}
+
 enum MemoryOperation: String {
     case push
     case pop
@@ -57,6 +66,16 @@ enum MemorySegment: String {
 protocol ProgramFlowCommand: Command {
     var operation: ProgramFlowOperation { get }
     var symbol: String { get }
+    var wrappingFunctionName: String? { get }
+}
+
+extension ProgramFlowCommand {
+    var uniqueSymbol: String? {
+        guard let wrappingFunctionName else {
+            return nil
+        }
+        return "\(wrappingFunctionName)$\(symbol)"
+    }
 }
 
 enum ProgramFlowOperation: String {
@@ -99,8 +118,9 @@ struct MemoryAccess: MemoryCommand {
 
 struct ProgramFlow: ProgramFlowCommand {
     var description: String { "\(operation.rawValue) \(symbol)"}
-    var operation: ProgramFlowOperation
-    var symbol: String
+    let operation: ProgramFlowOperation
+    let symbol: String
+    let wrappingFunctionName: String?
 }
 
 struct Function: FunctionCommand {
