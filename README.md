@@ -1,5 +1,10 @@
 # jack-vm-swift
+
 Swift implementation of the Jack virtual machine described in Nand2Tetris
+
+## Usage:
+
+`swift run JackVM vm-file-or-folder`
 
 ## TODOS:
 
@@ -18,6 +23,6 @@ Swift implementation of the Jack virtual machine described in Nand2Tetris
 
 - [x] Define program flow & function calling commands
 - [x] Parse program flow & function calling commands
-- [ ] Translate program flow & function calling commands
+- [x] Translate program flow & function calling commands
 - [x] Read all .vm files in a directory and translate them into a single hack asm
-- [ ] Test with course resources for project 8
+- [x] Test with course resources for project 8
