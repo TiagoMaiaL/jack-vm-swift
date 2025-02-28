@@ -57,10 +57,13 @@ extension FileIO {
     }
     
     private func fileName(fromPath path: String) -> String {
-        let nameComponents = path.components(separatedBy: ".")
-        guard !nameComponents.isEmpty else {
+        let pathComponents = path.components(separatedBy: "/")
+        let nameComponents = pathComponents.last?.components(separatedBy: ".")
+        
+        guard let nameComponents, !nameComponents.isEmpty else {
             preconditionFailure("File must have a name.")
         }
+        
         return nameComponents[0]
     }
     

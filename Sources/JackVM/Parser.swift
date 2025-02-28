@@ -103,7 +103,10 @@ struct Parser {
             }
             
             if operation == .return {
-                command = Function(operation: operation)
+                command = Function(
+                    operation: operation,
+                    wrappingFunctionName: currentFunctionDecl?.name
+                )
                 break
             }
             
@@ -116,7 +119,8 @@ struct Parser {
             command = Function(
                 operation: operation,
                 name: name,
-                count: count
+                count: count,
+                wrappingFunctionName: operation == .invoke ? currentFunctionDecl?.name : nil
             )
             
             if operation == .declare {

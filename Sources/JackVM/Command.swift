@@ -38,7 +38,7 @@ protocol MemoryCommand: Command {
 
 extension MemoryCommand {
     var staticSymbol: String? {
-        guard segment == .constant, let fileName else {
+        guard segment == .static, let fileName else {
             return nil
         }
         return "\(fileName).\(index)"
@@ -93,6 +93,18 @@ protocol FunctionCommand: Command {
     /// or the number of arguments provided (when the command is an invocation),
     /// or nil, if this is a return command.
     var count: Int? { get }
+    var wrappingFunctionName: String? { get }
+}
+
+extension FunctionCommand {
+    var returnAddressLabel: String? {
+        guard operation == .invoke,
+              let functionName = name,
+              let wrappingFunctionName else {
+            return nil
+        }
+        return "\(wrappingFunctionName).\(functionName).return-address"
+    }
 }
 
 enum FunctionOperation: String {
@@ -140,4 +152,5 @@ struct Function: FunctionCommand {
     var operation: FunctionOperation
     var name: String?
     var count: Int?
+    let wrappingFunctionName: String?
 }

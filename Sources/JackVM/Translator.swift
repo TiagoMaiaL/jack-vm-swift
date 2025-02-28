@@ -522,10 +522,7 @@ struct Translator {
     }
     
     private func translate(_ programFlow: ProgramFlowCommand) -> ASM {
-        guard let uniqueSymbol = programFlow.uniqueSymbol else {
-            preconditionFailure("Symbol must be declared within functions")
-        }
-        
+        let uniqueSymbol = programFlow.uniqueSymbol ?? programFlow.symbol
         var asm = ""
         
         switch programFlow.operation {
@@ -599,7 +596,9 @@ struct Translator {
             // go-to func-label
             // (return-addr)
             
-            guard let name = function.name, var argCount = function.count else {
+            guard var argCount = function.count,
+                  let callingName = function.name,
+                  let returnAddressLabel = function.returnAddressLabel else {
                 preconditionFailure("func call: name, count must be set.")
             }
             
@@ -616,11 +615,11 @@ struct Translator {
                 argCount = 1
             }
             
-            let returnAddressLabel = "RETURN_\(name)_\(Self.labelId)"
+            let uniqueReturnAddressLabel = "\(Self.labelId).\(returnAddressLabel)"
             Self.labelId += 1
             
             _asm += """
-            @\(returnAddressLabel)
+            @\(uniqueReturnAddressLabel)
             D=A
             @SP
             A=M
@@ -679,8 +678,8 @@ struct Translator {
             M=D\n
             """
             
-            _asm += translate(SynteticProgramFlow(operation: .goTo, symbol: name)) + "\n"
-            _asm += translate(SynteticProgramFlow(label: returnAddressLabel))
+            _asm += translate(SynteticProgramFlow(operation: .goTo, symbol: callingName)) + "\n"
+            _asm += translate(SynteticProgramFlow(label: uniqueReturnAddressLabel))
             
             asm = _asm
             
@@ -819,6 +818,7 @@ fileprivate extension MemoryCommand {
 }
 
 fileprivate struct SynteticFunction: FunctionCommand {
+    let wrappingFunctionName: String?
     var operation: FunctionOperation
     var name: String?
     var count: Int?
@@ -827,6 +827,11 @@ fileprivate struct SynteticFunction: FunctionCommand {
 
 extension SynteticFunction {
     static var callSysInit: SynteticFunction {
-        .init(operation: .invoke, name: "Sys.init", count: 0)
+        .init(
+            wrappingFunctionName: "globalscope",
+            operation: .invoke,
+            name: "Sys.init",
+            count: 0
+        )
     }
 }
